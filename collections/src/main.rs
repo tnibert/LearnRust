@@ -1,5 +1,6 @@
 mod vectors;
 mod strings;
+mod hashmaps;
 
 fn main() {
     vectors::vector_decls();
@@ -9,4 +10,7 @@ fn main() {
     strings::create();
     strings::update();
     strings::accessing_elements();
+
+    hashmaps::scores();
+    hashmaps::updating();
 }

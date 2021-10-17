@@ -1,3 +1,5 @@
+mod lifetimes;
+
 use std::fmt::Display;
 
 fn main() {
@@ -33,6 +35,29 @@ fn main() {
 
     let result = largest(&char_list);
     println!("The largest char is {}", result);
+
+    // if lifetimes not equal, 'a indicates smaller lifetime
+    // borrow checker
+    // just need to pass to caller scope - 1 step up stack
+    let string1 = String::from("long string is long");
+
+    {
+        let string2 = String::from("xyz");
+        let result = lifetimes::longest(string1.as_str(), string2.as_str());
+        println!("The longest string is {}", result);
+    }
+
+    // struct with lifetime and reference
+    let novel = String::from("Call me Ishmael. Some years ago...");
+    let first_sentence = novel.split('.').next().expect("Could not find a '.'");
+    let i = lifetimes::ImportantExcerpt {
+        part: first_sentence,
+    };
+
+    // static lifetime
+    // string literals all have static lifetime regardless
+    // using is a code smell
+    let s: &'static str = "I have a static lifetime.";
 }
 
 // used in struct

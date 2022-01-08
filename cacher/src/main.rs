@@ -1,5 +1,10 @@
+use std::thread;
+use std::time::Duration;
+use std::collections::HashMap;
+
 /*
 https://doc.rust-lang.org/book/ch13-01-closures.html
+Challenge part 1:
 Try modifying Cacher to hold a hash map rather than a single value. The keys of the
 hash map will be the arg values that are passed in, and the values of the hash map 
 will be the result of calling the closure on that key. Instead of looking at whether 
@@ -8,6 +13,7 @@ arg in the hash map and return the value if it’s present. If it’s not presen
 Cacher will call the closure and save the resulting value in the hash map associated
 with its arg value.
 
+Challenge part 2:
 The second problem with the current Cacher implementation is that it only accepts 
 closures that take one parameter of type u32 and return a u32. We might want to 
 cache the results of closures that take a string slice and return usize values, 
@@ -20,7 +26,7 @@ where
     T: Fn(u32) -> u32,
 {
     calculation: T,
-    value: Option<u32>,
+    value_cache_map: HashMap<u32, u32>,
 }
 
 impl<T> Cacher<T>
@@ -30,22 +36,31 @@ where
     fn new(calculation: T) -> Cacher<T> {
         Cacher {
             calculation,
-            value: None,
+            value_cache_map: HashMap::new(),
         }
     }
 
     fn value(&mut self, arg: u32) -> u32 {
-        match self.value {
-            Some(v) => v,
+        match self.value_cache_map.get(&arg) {
+            Some(v) => *v,
             None => {
-                let v = (self.calculation)(arg);
-                self.value = Some(v);
-                v
+                let result = (self.calculation)(arg);
+                self.value_cache_map.insert(arg, result);
+                result
             }
         }
     }
 }
 
 fn main() {
-    println!("Hello, world!");
+    let mut expensive_result = Cacher::new(|num| {
+        println!("calculating slowly...");
+        thread::sleep(Duration::from_secs(2));
+        num
+    });
+
+    println!("{}", expensive_result.value(1));
+    println!("{}", expensive_result.value(1));
+    println!("{}", expensive_result.value(2));
+    println!("{}", expensive_result.value(2));
 }

@@ -1,20 +1,25 @@
+extern crate sdl2;
+
 use sdl2::render::{Canvas, Texture, TextureAccess};
 use sdl2::Sdl;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::TextureCreator;
 use sdl2::video::Window;
 use sdl2::video::WindowContext;
-
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-
+use sdl2::image::{InitFlag, LoadTexture};
+use std::env;
+use std::path::Path;
 use std::{thread, time::Duration};
 
+// TODO: separate the character into frames and make him move around the screen
+
 /// Emulated screen width in pixels
-const SCREEN_WIDTH: usize = 256;
+const SCREEN_WIDTH: usize = 256*2;
 /// Emulated screen height in pixels
-const SCREEN_HEIGHT: usize = 240;
+const SCREEN_HEIGHT: usize = 240*2;
 /// Screen texture size in bytes
 const SCREEN_SIZE: usize = SCREEN_WIDTH * SCREEN_HEIGHT * 3;
 
@@ -56,21 +61,32 @@ const SCALE: usize = 1;
 pub fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
+    // why can't I use ? instead of unwrap()?
+    let _image_context = sdl2::image::init(InitFlag::PNG | InitFlag::JPG).unwrap();
  
     let window = video_subsystem.window("test",
                                         (SCREEN_WIDTH as usize * SCALE) as u32,
                                         (SCREEN_HEIGHT as usize * SCALE) as u32)
         .position_centered()
         .build()
-        .unwrap();
+        .map_err(|e| e.to_string()).unwrap();
  
-    let mut canvas = window.into_canvas().build().unwrap();
+    let mut canvas = window
+        .into_canvas()
+        .software()
+        .build()
+        .map_err(|e| e.to_string()).unwrap();
  
+    let texture_creator = canvas.texture_creator();
+    let png = Path::new("assets/reaper.png");
+    let texture = texture_creator.load_texture(png).unwrap();
+
     canvas.set_draw_color(Color::RGB(0, 255, 255));
     canvas.clear();
     canvas.present();
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut i = 0;
+
     'running: loop {
         i = (i + 1) % 255;
         canvas.set_draw_color(Color::RGB(i, 64, 255 - i));
@@ -85,6 +101,9 @@ pub fn main() {
             }
         }
         // The rest of the game loop goes here...
+
+        // blit
+        canvas.copy(&texture, None, None);
 
         canvas.present();
         thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));

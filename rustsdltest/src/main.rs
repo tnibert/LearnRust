@@ -33,6 +33,7 @@ const SPRITE_H: u32 = 36;
 struct Player {
     position: Point,
     sprite: Rect,
+    speed: i32
 }
 
 fn render(
@@ -47,6 +48,7 @@ fn render(
     // get size of window
     let (width, height) = canvas.output_size()?;
 
+    // world coordinate system
     // Treat the center of the screen as the (0, 0) coordinate
     let screen_position = player.position + Point::new(width as i32 / 2, height as i32 / 2);
     let screen_rect = Rect::from_center(screen_position, player.sprite.width(), player.sprite.height());
@@ -81,16 +83,18 @@ pub fn main() {
     let png = Path::new("assets/reaper.png");
     let texture = texture_creator.load_texture(png).unwrap();
 
-    let player = Player {
+    let mut player = Player {
         position: Point::new(0, 0),
         // src position in the spritesheet
         sprite: Rect::new(0, 0, SPRITE_W, SPRITE_H),
+        speed: 5
     };
 
     canvas.set_draw_color(Color::RGB(0, 255, 255));
     canvas.clear();
     canvas.present();
 
+    // event pump is queried to find out if there are any pending events
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut i = 0;
 
@@ -98,11 +102,27 @@ pub fn main() {
         i = (i + 1) % 255;
         canvas.set_draw_color(Color::RGB(i, 64, 255 - i));
         canvas.clear();
+        // handle events
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit {..} |
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                     break 'running
+                },
+                // player control
+                // how to allow diagonal movement?
+                // answer: don't set the player position directly here
+                Event::KeyDown { keycode: Some(Keycode::Left), .. } => {
+                    player.position = player.position.offset(-player.speed, 0);
+                },
+                Event::KeyDown { keycode: Some(Keycode::Right), .. } => {
+                    player.position = player.position.offset(player.speed, 0);
+                },
+                Event::KeyDown { keycode: Some(Keycode::Up), .. } => {
+                    player.position = player.position.offset(0, -player.speed);
+                },
+                Event::KeyDown { keycode: Some(Keycode::Down), .. } => {
+                    player.position = player.position.offset(0, player.speed);
                 },
                 _ => {}
             }

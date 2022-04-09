@@ -15,7 +15,7 @@ use std::env;
 use std::path::Path;
 use std::{thread, time::Duration};
 
-// TODO: separate the character into frames and make him move around the screen
+// TODO: separate the character into frames, match up for walking
 
 /// Emulated screen width in pixels
 const SCREEN_WIDTH: usize = 256*2;
@@ -90,7 +90,8 @@ pub fn main() {
         speed: 5
     };
 
-    canvas.set_draw_color(Color::RGB(0, 255, 255));
+    let bg_color = Color::RGB(120, 255, 255);
+    canvas.set_draw_color(bg_color);
     canvas.clear();
     canvas.present();
 
@@ -99,8 +100,7 @@ pub fn main() {
     let mut i = 0;
 
     'running: loop {
-        i = (i + 1) % 255;
-        canvas.set_draw_color(Color::RGB(i, 64, 255 - i));
+        canvas.set_draw_color(bg_color);
         canvas.clear();
         // handle events
         for event in event_pump.poll_iter() {
@@ -130,9 +130,11 @@ pub fn main() {
         // The rest of the game loop goes here...
 
         // blit
-        render(&mut canvas, Color::RGB(i, 64, 255 - i), &texture, &player);
+        render(&mut canvas, bg_color, &texture, &player);
 
         canvas.present();
+
+        // todo: use monotonic clock to find exact time for sleep
         thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
 }

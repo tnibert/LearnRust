@@ -30,29 +30,29 @@ const SPRITE_W: u32 = 26;
 const SPRITE_H: u32 = 36;
 
 // handles renderable character
-#[derive(Debug)]
-struct Sprite {
+//#[derive(Debug)]
+struct Sprite<'a> {
     position: Point,
     area: Rect,
-    speed: i32
+    speed: i32,
+    spritesheet: Texture<'a>
 }
 
-impl Sprite {
+impl Sprite<'_> {
     fn movespr(&mut self, xdiff: i32, ydiff: i32) {
         self.position = self.position.offset(xdiff, ydiff);
     }
 }
 
 // handles player
-#[derive(Debug)]
-struct Player {
-    spr: Sprite
+//#[derive(Debug)]
+struct Player<'a> {
+    spr: Sprite<'a>
 }
 
 fn render(
     canvas: &mut WindowCanvas,
     color: Color,
-    texture: &Texture,
     player: &Player,
 ) -> Result<(), String> {
     canvas.set_draw_color(color);
@@ -66,7 +66,8 @@ fn render(
     let screen_position = player.spr.position + Point::new(width as i32 / 2, height as i32 / 2);
     let screen_rect = Rect::from_center(screen_position, player.spr.area.width(), player.spr.area.height());
 
-    canvas.copy(texture, player.spr.area, screen_rect)?;
+    // why is spritesheet borrowed but area not?
+    canvas.copy(&player.spr.spritesheet, player.spr.area, screen_rect)?;
 
     canvas.present();
 
@@ -94,14 +95,14 @@ pub fn main() {
  
     let texture_creator = canvas.texture_creator();
     let png = Path::new("assets/reaper.png");
-    let texture = texture_creator.load_texture(png).unwrap();
 
     let mut player = Player {
         spr: Sprite {
             position: Point::new(0, 0),
             // src position in the spritesheet
             area: Rect::new(0, 0, SPRITE_W, SPRITE_H),
-            speed: 5
+            speed: 5,
+            spritesheet: texture_creator.load_texture(png).unwrap()
         }
     };
 
@@ -146,7 +147,7 @@ pub fn main() {
         // The rest of the game loop goes here...
 
         // blit
-        render(&mut canvas, bg_color, &texture, &player);
+        render(&mut canvas, bg_color, &player);
 
         // todo: use monotonic clock to find exact time for sleep
         thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));

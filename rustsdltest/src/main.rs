@@ -29,44 +29,17 @@ const SCALE: usize = 1;
 const SPRITE_W: u32 = 26;
 const SPRITE_H: u32 = 36;
 
-// the following.. goes to screen as streaming texture?
-/*fn main() {
-    let sdl = sdl2::init().unwrap();
-    let video_subsystem = sdl.video().unwrap();
-
-    let mut window_builder = video_subsystem.window(
-        "test",
-        (SCREEN_WIDTH as usize * SCALE) as u32,
-        (SCREEN_HEIGHT as usize * SCALE) as u32,
-        );
-    let window = window_builder.position_centered().build().unwrap();
-
-    let renderer = window
-        .into_canvas()
-        .accelerated()
-        .present_vsync()
-        .build()
-        .unwrap();
-    let texture_creator = renderer.texture_creator();
-    let texture_creator_pointer = &texture_creator as *const TextureCreator<WindowContext>;
-    let texture = unsafe { &*texture_creator_pointer }
-        .create_texture(
-            PixelFormatEnum::BGR24,
-            TextureAccess::Streaming,
-            SCREEN_WIDTH as u32,
-            SCREEN_HEIGHT as u32,
-        )
-        .unwrap();
-
-    thread::sleep(Duration::from_millis(4000));
-}*/
+#[derive(Debug)]
+struct Player {
+    position: Point,
+    sprite: Rect,
+}
 
 fn render(
     canvas: &mut WindowCanvas,
     color: Color,
     texture: &Texture,
-    position: Point,
-    sprite: Rect,
+    player: &Player,
 ) -> Result<(), String> {
     canvas.set_draw_color(color);
     canvas.clear();
@@ -75,9 +48,10 @@ fn render(
     let (width, height) = canvas.output_size()?;
 
     // Treat the center of the screen as the (0, 0) coordinate
-    let screen_position = position + Point::new(width as i32 / 2, height as i32 / 2);
-    let screen_rect = Rect::from_center(screen_position, sprite.width(), sprite.height());
-    canvas.copy(texture, sprite, screen_rect)?;
+    let screen_position = player.position + Point::new(width as i32 / 2, height as i32 / 2);
+    let screen_rect = Rect::from_center(screen_position, player.sprite.width(), player.sprite.height());
+
+    canvas.copy(texture, player.sprite, screen_rect)?;
 
     canvas.present();
 
@@ -107,9 +81,11 @@ pub fn main() {
     let png = Path::new("assets/reaper.png");
     let texture = texture_creator.load_texture(png).unwrap();
 
-    let position = Point::new(0, 0);
-    // src position in the spritesheet
-    let sprite = Rect::new(0, 0, SPRITE_W, SPRITE_H);
+    let player = Player {
+        position: Point::new(0, 0),
+        // src position in the spritesheet
+        sprite: Rect::new(0, 0, SPRITE_W, SPRITE_H),
+    };
 
     canvas.set_draw_color(Color::RGB(0, 255, 255));
     canvas.clear();
@@ -134,10 +110,7 @@ pub fn main() {
         // The rest of the game loop goes here...
 
         // blit
-        // copy_ex() is like copy() but with some more options
-        //canvas.copy(&texture, None, None);        // this one does whole sprite sheet
-        //canvas.copy(&texture, Rect::new(0, 0, SPRITE_W, SPRITE_H), Rect::new(0, 0, SPRITE_W, SPRITE_H));
-        render(&mut canvas, Color::RGB(i, 64, 255 - i), &texture, position, sprite);
+        render(&mut canvas, Color::RGB(i, 64, 255 - i), &texture, &player);
 
         canvas.present();
         thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
@@ -145,5 +118,8 @@ pub fn main() {
 }
 
 // some notes:
+//
 // Just remember that 32, Some(32), and None can all be passed into a function whose type implements Into<Option<i32>>.
 // This pattern is a relatively easy way to implement optional/default arguments in Rust.
+//
+// copy_ex() is like copy() but with some more options

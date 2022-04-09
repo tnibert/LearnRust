@@ -38,8 +38,8 @@ struct Sprite {
 }
 
 impl Sprite {
-    fn movespr(&self, xdiff: i32, ydiff: i32) {
-        self.position.offset(xdiff, ydiff);
+    fn movespr(&mut self, xdiff: i32, ydiff: i32) {
+        self.position = self.position.offset(xdiff, ydiff);
     }
 }
 
@@ -119,6 +119,7 @@ pub fn main() {
         canvas.clear();
         // handle events
         for event in event_pump.poll_iter() {
+            println!("{:?}", event);
             match event {
                 Event::Quit {..} |
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
@@ -128,16 +129,16 @@ pub fn main() {
                 // how to allow diagonal movement?
                 // answer: don't set the player position directly here
                 Event::KeyDown { keycode: Some(Keycode::Left), .. } => {
-                    player.spr.position = player.spr.position.offset(-player.spr.speed, 0);
+                    player.spr.movespr(-player.spr.speed, 0);
                 },
                 Event::KeyDown { keycode: Some(Keycode::Right), .. } => {
-                    player.spr.position = player.spr.position.offset(player.spr.speed, 0);
+                    player.spr.movespr(player.spr.speed, 0);
                 },
                 Event::KeyDown { keycode: Some(Keycode::Up), .. } => {
-                    player.spr.position = player.spr.position.offset(0, -player.spr.speed);
+                    player.spr.movespr(0, -player.spr.speed);
                 },
                 Event::KeyDown { keycode: Some(Keycode::Down), .. } => {
-                    player.spr.position = player.spr.position.offset(0, player.spr.speed);
+                    player.spr.movespr(0, player.spr.speed);
                 },
                 _ => {}
             }

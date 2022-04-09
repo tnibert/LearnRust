@@ -29,11 +29,24 @@ const SCALE: usize = 1;
 const SPRITE_W: u32 = 26;
 const SPRITE_H: u32 = 36;
 
+// handles renderable character
+#[derive(Debug)]
+struct Sprite {
+    position: Point,
+    area: Rect,
+    speed: i32
+}
+
+impl Sprite {
+    fn movespr(&self, xdiff: i32, ydiff: i32) {
+        self.position.offset(xdiff, ydiff);
+    }
+}
+
+// handles player
 #[derive(Debug)]
 struct Player {
-    position: Point,
-    sprite: Rect,
-    speed: i32
+    spr: Sprite
 }
 
 fn render(
@@ -50,10 +63,10 @@ fn render(
 
     // world coordinate system
     // Treat the center of the screen as the (0, 0) coordinate
-    let screen_position = player.position + Point::new(width as i32 / 2, height as i32 / 2);
-    let screen_rect = Rect::from_center(screen_position, player.sprite.width(), player.sprite.height());
+    let screen_position = player.spr.position + Point::new(width as i32 / 2, height as i32 / 2);
+    let screen_rect = Rect::from_center(screen_position, player.spr.area.width(), player.spr.area.height());
 
-    canvas.copy(texture, player.sprite, screen_rect)?;
+    canvas.copy(texture, player.spr.area, screen_rect)?;
 
     canvas.present();
 
@@ -84,10 +97,12 @@ pub fn main() {
     let texture = texture_creator.load_texture(png).unwrap();
 
     let mut player = Player {
-        position: Point::new(0, 0),
-        // src position in the spritesheet
-        sprite: Rect::new(0, 0, SPRITE_W, SPRITE_H),
-        speed: 5
+        spr: Sprite {
+            position: Point::new(0, 0),
+            // src position in the spritesheet
+            area: Rect::new(0, 0, SPRITE_W, SPRITE_H),
+            speed: 5
+        }
     };
 
     let bg_color = Color::RGB(120, 255, 255);
@@ -113,16 +128,16 @@ pub fn main() {
                 // how to allow diagonal movement?
                 // answer: don't set the player position directly here
                 Event::KeyDown { keycode: Some(Keycode::Left), .. } => {
-                    player.position = player.position.offset(-player.speed, 0);
+                    player.spr.position = player.spr.position.offset(-player.spr.speed, 0);
                 },
                 Event::KeyDown { keycode: Some(Keycode::Right), .. } => {
-                    player.position = player.position.offset(player.speed, 0);
+                    player.spr.position = player.spr.position.offset(player.spr.speed, 0);
                 },
                 Event::KeyDown { keycode: Some(Keycode::Up), .. } => {
-                    player.position = player.position.offset(0, -player.speed);
+                    player.spr.position = player.spr.position.offset(0, -player.spr.speed);
                 },
                 Event::KeyDown { keycode: Some(Keycode::Down), .. } => {
-                    player.position = player.position.offset(0, player.speed);
+                    player.spr.position = player.spr.position.offset(0, player.spr.speed);
                 },
                 _ => {}
             }
@@ -131,8 +146,6 @@ pub fn main() {
 
         // blit
         render(&mut canvas, bg_color, &texture, &player);
-
-        canvas.present();
 
         // todo: use monotonic clock to find exact time for sleep
         thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));

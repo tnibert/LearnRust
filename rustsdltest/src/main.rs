@@ -1,6 +1,6 @@
 extern crate sdl2;
 
-use sdl2::render::{Canvas, Texture, TextureAccess};
+use sdl2::render::{Canvas, WindowCanvas, Texture, TextureAccess};
 use sdl2::Sdl;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::TextureCreator;
@@ -10,6 +10,7 @@ use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::image::{InitFlag, LoadTexture};
+use sdl2::rect::{Point, Rect};
 use std::env;
 use std::path::Path;
 use std::{thread, time::Duration};
@@ -24,6 +25,9 @@ const SCREEN_HEIGHT: usize = 240*2;
 const SCREEN_SIZE: usize = SCREEN_WIDTH * SCREEN_HEIGHT * 3;
 
 const SCALE: usize = 1;
+
+const SPRITE_W: u32 = 26;
+const SPRITE_H: u32 = 36;
 
 // the following.. goes to screen as streaming texture?
 /*fn main() {
@@ -57,7 +61,29 @@ const SCALE: usize = 1;
     thread::sleep(Duration::from_millis(4000));
 }*/
 
-// this one is just the basic SDL example from https://rust-sdl2.github.io/rust-sdl2/sdl2/
+fn render(
+    canvas: &mut WindowCanvas,
+    color: Color,
+    texture: &Texture,
+    position: Point,
+    sprite: Rect,
+) -> Result<(), String> {
+    canvas.set_draw_color(color);
+    canvas.clear();
+
+    // get size of window
+    let (width, height) = canvas.output_size()?;
+
+    // Treat the center of the screen as the (0, 0) coordinate
+    let screen_position = position + Point::new(width as i32 / 2, height as i32 / 2);
+    let screen_rect = Rect::from_center(screen_position, sprite.width(), sprite.height());
+    canvas.copy(texture, sprite, screen_rect)?;
+
+    canvas.present();
+
+    Ok(())
+}
+
 pub fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
@@ -81,9 +107,14 @@ pub fn main() {
     let png = Path::new("assets/reaper.png");
     let texture = texture_creator.load_texture(png).unwrap();
 
+    let position = Point::new(0, 0);
+    // src position in the spritesheet
+    let sprite = Rect::new(0, 0, SPRITE_W, SPRITE_H);
+
     canvas.set_draw_color(Color::RGB(0, 255, 255));
     canvas.clear();
     canvas.present();
+
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut i = 0;
 
@@ -103,9 +134,16 @@ pub fn main() {
         // The rest of the game loop goes here...
 
         // blit
-        canvas.copy(&texture, None, None);
+        // copy_ex() is like copy() but with some more options
+        //canvas.copy(&texture, None, None);        // this one does whole sprite sheet
+        //canvas.copy(&texture, Rect::new(0, 0, SPRITE_W, SPRITE_H), Rect::new(0, 0, SPRITE_W, SPRITE_H));
+        render(&mut canvas, Color::RGB(i, 64, 255 - i), &texture, position, sprite);
 
         canvas.present();
         thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
 }
+
+// some notes:
+// Just remember that 32, Some(32), and None can all be passed into a function whose type implements Into<Option<i32>>.
+// This pattern is a relatively easy way to implement optional/default arguments in Rust.
